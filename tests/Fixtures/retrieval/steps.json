@@ -1,0 +1,18 @@
+{
+  "steps": [
+    {
+      "id": "step-document",
+      "status": "PROCESSED",
+      "capabilities": [
+        "documentVerification"
+      ]
+    },
+    {
+      "id": "step-selfie",
+      "status": "PROCESSED",
+      "capabilities": [
+        "facialLiveness"
+      ]
+    }
+  ]
+}

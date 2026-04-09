@@ -1,83 +1,161 @@
-# This is my package laravel-jumio
+# Laravel Jumio
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/ziming/laravel-jumio.svg?style=flat-square)](https://packagist.org/packages/ziming/laravel-jumio)
 [![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/ziming/laravel-jumio/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/ziming/laravel-jumio/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/ziming/laravel-jumio/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/ziming/laravel-jumio/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/ziming/laravel-jumio.svg?style=flat-square)](https://packagist.org/packages/ziming/laravel-jumio)
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+`ziming/laravel-jumio` is a Laravel-first Jumio Platform client built on Saloon v4. It covers the main server-side workflow for Jumio Platform:
 
-## Support us
+- OAuth client-credentials token retrieval with cache-aware refresh
+- account create and update calls
+- credential part uploads and workflow finalization with the transaction token returned by the account response
+- retrieval status, details, steps, rules, and PDF generation
 
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/laravel-jumio.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/laravel-jumio)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+The package keeps the OAuth bearer token flow separate from the transaction-specific credential token flow because Jumio uses different auth surfaces for them.
 
 ## Installation
-
-You can install the package via composer:
 
 ```bash
 composer require ziming/laravel-jumio
 ```
 
-You can publish and run the migrations with:
-
-```bash
-php artisan vendor:publish --tag="laravel-jumio-migrations"
-php artisan migrate
-```
-
-You can publish the config file with:
+Publish the config file if you want to override defaults:
 
 ```bash
 php artisan vendor:publish --tag="laravel-jumio-config"
 ```
 
-This is the contents of the published config file:
+## Configuration
+
+Set the Jumio credentials and region in your environment:
+
+```env
+JUMIO_REGION=amer-1
+JUMIO_CLIENT_ID=your-client-id
+JUMIO_CLIENT_SECRET=your-client-secret
+JUMIO_USER_AGENT="my-app/1.0"
+JUMIO_CALLBACK_URL=https://example.com/jumio/callback
+```
+
+Available config keys:
 
 ```php
 return [
+    'region' => 'amer-1', // amer-1, emea-1, apac-1
+    'client_id' => env('JUMIO_CLIENT_ID'),
+    'client_secret' => env('JUMIO_CLIENT_SECRET'),
+    'user_agent' => env('JUMIO_USER_AGENT', 'laravel-jumio/1.0'),
+    'callback_url' => env('JUMIO_CALLBACK_URL'),
+    'timeout' => 30,
+    'connect_timeout' => 10,
+    'retry' => [
+        'tries' => 1,
+        'interval_ms' => 250,
+        'exponential_backoff' => false,
+    ],
+    'cache' => [
+        'store' => null,
+        'prefix' => 'jumio',
+        'token_refresh_buffer' => 300,
+    ],
 ];
 ```
 
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag="laravel-jumio-views"
-```
+`token_refresh_buffer` is in seconds. Jumio’s OAuth access tokens are currently valid for 60 minutes, so the default buffer refreshes them 5 minutes early.
 
 ## Usage
 
 ```php
-$laravelJumio = new Ziming\LaravelJumio();
-echo $laravelJumio->echoPhrase('Hello, Ziming!');
+use Ziming\LaravelJumio\Data\AccountRequestData;
+use Ziming\LaravelJumio\Data\CredentialDefinitionData;
+use Ziming\LaravelJumio\Data\CredentialPartUploadData;
+use Ziming\LaravelJumio\Data\PredefinedValueData;
+use Ziming\LaravelJumio\Data\WorkflowDefinitionData;
+use Ziming\LaravelJumio\Facades\LaravelJumio;
+
+$session = LaravelJumio::createAccount(new AccountRequestData(
+    customerInternalReference: 'customer-123',
+    userReference: 'user-123',
+    workflowDefinition: new WorkflowDefinitionData(
+        key: '10547',
+        credentials: [
+            new CredentialDefinitionData(
+                category: 'ID',
+                country: new PredefinedValueData(['USA']),
+                type: new PredefinedValueData(['PASSPORT']),
+            ),
+        ],
+        capabilities: [
+            'documentVerification' => [
+                'enableExtraction' => true,
+            ],
+        ],
+    ),
+));
+
+$credential = $session->firstCredential();
+
+LaravelJumio::uploadCredentialPart(new CredentialPartUploadData(
+    accountId: $session->accountId,
+    workflowExecutionId: $session->workflowExecutionId,
+    credentialId: $credential->id,
+    token: $credential->apiToken,
+    classifier: 'FRONT',
+    file: fopen(storage_path('app/jumio/front.png'), 'rb'),
+    filename: 'front.png',
+));
+
+LaravelJumio::finalizeWorkflow(new \Ziming\LaravelJumio\Data\FinalizeWorkflowData(
+    accountId: $session->accountId,
+    workflowExecutionId: $session->workflowExecutionId,
+    token: $credential->apiToken,
+));
+
+$status = LaravelJumio::getWorkflowStatus(
+    $session->accountId,
+    $session->workflowExecutionId,
+);
 ```
+
+### Retrieval
+
+```bash
+use Ziming\LaravelJumio\Facades\LaravelJumio;
+
+$details = LaravelJumio::getWorkflowDetails($accountId, $workflowExecutionId);
+$steps = LaravelJumio::getWorkflowSteps($accountId, $workflowExecutionId);
+$rules = LaravelJumio::getWorkflowRules($accountId, $workflowExecutionId);
+$pdf = LaravelJumio::generateWorkflowPdf($accountId, $workflowExecutionId);
+```
+
+The status and PDF endpoints return small DTOs for the stable top-level fields. The larger retrieval endpoints return normalized arrays because Jumio’s nested retrieval payloads are large and change frequently.
+
+### Notes
+
+- Account and retrieval requests use the cached OAuth bearer token.
+- Credential upload and finalize requests use the transaction token from the account response, not the OAuth token.
+- `PREPARED_DATA` is not modeled in this initial release because the current Jumio docs are inconsistent around that request shape.
 
 ## Testing
 
 ```bash
 composer test
+composer analyse
 ```
 
-## Changelog
-
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+The test suite uses `Saloon::fake()` so package behavior can be verified without hitting Jumio directly.
 
 ## Contributing
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+Contributions are welcome. Keep new endpoints behind typed DTOs where the response contract is stable, and prefer normalized arrays for very large retrieval payloads.
 
 ## Security Vulnerabilities
 
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
+Please report security issues privately instead of opening a public issue.
 
 ## Credits
 
 - [ziming](https://github.com/ziming)
-- [All Contributors](../../contributors)
 
 ## License
 

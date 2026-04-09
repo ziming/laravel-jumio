@@ -1,9 +1,13 @@
 {
     "name": "ziming/laravel-jumio",
-    "description": "Laravel Jumio Package",
+    "description": "Laravel-first Jumio Platform client for account, credential, and retrieval workflows.",
     "keywords": [
         "laravel",
-        "laravel-jumio"
+        "jumio",
+        "kyc",
+        "identity-verification",
+        "laravel-jumio",
+        "saloon"
     ],
     "homepage": "https://github.com/ziming/laravel-jumio",
     "license": "MIT",
@@ -15,33 +19,37 @@
         }
     ],
     "require": {
-        "php": "^8.4",
-        "spatie/laravel-package-tools": "^1.16",
-        "illuminate/contracts": "^11.0||^12.0"
+        "php": "^8.2",
+        "illuminate/cache": "^11.0 || ^12.0",
+        "illuminate/contracts": "^11.0 || ^12.0",
+        "illuminate/support": "^11.0 || ^12.0",
+        "saloonphp/laravel-plugin": "^4.0",
+        "saloonphp/saloon": "^4.0",
+        "spatie/laravel-data": "^4.0",
+        "spatie/laravel-package-tools": "^1.93"
     },
     "require-dev": {
-        "laravel/pint": "^1.14",
-        "nunomaduro/collision": "^8.8",
         "larastan/larastan": "^3.0",
-        "orchestra/testbench": "^10.0.0||^9.0.0",
+        "laravel/framework": "^11.0 || ^12.0",
+        "laravel/pint": "^1.14",
+        "nunomaduro/collision": "^8.6",
+        "orchestra/testbench": "^9.15 || ^10.0",
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-arch": "^4.0",
         "pestphp/pest-plugin-laravel": "^4.0",
         "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-deprecation-rules": "^2.0",
-        "phpstan/phpstan-phpunit": "^2.0",
-        "spatie/laravel-ray": "^1.35"
+        "phpstan/phpstan-phpunit": "^2.0"
     },
     "autoload": {
         "psr-4": {
-            "Ziming\\LaravelJumio\\": "src/",
-            "Ziming\\LaravelJumio\\Database\\Factories\\": "database/factories/"
+            "Ziming\\LaravelJumio\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Ziming\\LaravelJumio\\Tests\\": "tests/",
-            "Workbench\\App\\": "workbench/app/"
+            "Ziming\\LaravelJumio\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -69,6 +77,5 @@
             }
         }
     },
-    "minimum-stability": "dev",
     "prefer-stable": true
 }

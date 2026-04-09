@@ -25,6 +25,7 @@ _ide_helper_models.php
 /.vscode
 
 # Misc
+.context
 phpunit.xml
 phpstan.neon
 testbench.yaml

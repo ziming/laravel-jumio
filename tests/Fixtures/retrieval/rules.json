@@ -1,0 +1,9 @@
+{
+  "rules": [
+    {
+      "id": "decision-default",
+      "label": "default-ruleset",
+      "outcome": "PASSED"
+    }
+  ]
+}

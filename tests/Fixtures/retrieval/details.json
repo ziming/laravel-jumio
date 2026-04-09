@@ -1,0 +1,27 @@
+{
+  "account": {
+    "id": "bbf3a261-9bf9-400c-b218-cd275596d8d9"
+  },
+  "workflowExecution": {
+    "id": "be493071-3ffe-4c7f-9bb9-8733a614b627",
+    "status": "PROCESSED",
+    "definitionKey": "10547"
+  },
+  "credentials": [
+    {
+      "id": "ff0a45e1-9f85-470e-8cfb-e478ef1a3ff2",
+      "category": "ID",
+      "decision": {
+        "label": "PASS"
+      }
+    }
+  ],
+  "services": [
+    {
+      "name": "documentVerification",
+      "result": {
+        "decision": "PASS"
+      }
+    }
+  ]
+}
