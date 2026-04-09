@@ -1,18 +1,17 @@
 {
-    "name": ":vendor_slug/:package_slug",
-    "description": ":package_description",
+    "name": "ziming/laravel-jumio",
+    "description": "Laravel Jumio Package",
     "keywords": [
-        ":vendor_name",
         "laravel",
-        ":package_slug"
+        "laravel-jumio"
     ],
-    "homepage": "https://github.com/:vendor_slug/:package_slug",
+    "homepage": "https://github.com/ziming/laravel-jumio",
     "license": "MIT",
     "authors": [
         {
-            "name": ":author_name",
-            "email": "author@domain.com",
-            "role": "Developer"
+            "name": "ziming",
+            "email": "ziming.opensource@gmail.com",
+            "role": "Package Uploader"
         }
     ],
     "require": {
@@ -35,13 +34,13 @@
     },
     "autoload": {
         "psr-4": {
-            "VendorName\\Skeleton\\": "src/",
-            "VendorName\\Skeleton\\Database\\Factories\\": "database/factories/"
+            "Ziming\\LaravelJumio\\": "src/",
+            "Ziming\\LaravelJumio\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "VendorName\\Skeleton\\Tests\\": "tests/",
+            "Ziming\\LaravelJumio\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
@@ -63,10 +62,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "VendorName\\Skeleton\\SkeletonServiceProvider"
+                "Ziming\\LaravelJumio\\LaravelJumioServiceProvider"
             ],
             "aliases": {
-                "Skeleton": "VendorName\\Skeleton\\Facades\\Skeleton"
+                "LaravelJumio": "Ziming\\LaravelJumio\\Facades\\LaravelJumio"
             }
         }
     },
