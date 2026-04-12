@@ -27,6 +27,15 @@ class LaravelJumio implements JumioClient
         return $this->client->createAccount($data);
     }
 
+    public function createAccountSimple(
+        string $customerReference,
+        ?string $successUrl = null,
+        ?string $errorUrl = null,
+        ?string $locale = null,
+    ): AccountSessionData {
+        return $this->client->createAccountSimple($customerReference, $successUrl, $errorUrl, $locale);
+    }
+
     public function updateAccount(string $accountId, AccountRequestData $data): AccountSessionData
     {
         return $this->client->updateAccount($accountId, $data);
@@ -65,5 +74,15 @@ class LaravelJumio implements JumioClient
     public function generateWorkflowPdf(string $accountId, string $workflowExecutionId): WorkflowPdfData
     {
         return $this->client->generateWorkflowPdf($accountId, $workflowExecutionId);
+    }
+
+    public function downloadImage(string $href): ?string
+    {
+        return $this->client->downloadImage($href);
+    }
+
+    public function validateWebhookSignature(string $rawBody, string $signature): bool
+    {
+        return $this->client->validateWebhookSignature($rawBody, $signature);
     }
 }

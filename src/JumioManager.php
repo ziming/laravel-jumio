@@ -19,6 +19,8 @@ use Ziming\LaravelJumio\Data\AccountSessionData;
 use Ziming\LaravelJumio\Data\CredentialPartUploadData;
 use Ziming\LaravelJumio\Data\CredentialUploadData;
 use Ziming\LaravelJumio\Data\FinalizeWorkflowData;
+use Ziming\LaravelJumio\Data\WebSettingsData;
+use Ziming\LaravelJumio\Data\WorkflowDefinitionData;
 use Ziming\LaravelJumio\Data\WorkflowPdfData;
 use Ziming\LaravelJumio\Data\WorkflowStatusData;
 use Ziming\LaravelJumio\Enums\JumioRegion;
@@ -28,6 +30,7 @@ use Ziming\LaravelJumio\Requests\Accounts\CreateAccountRequest;
 use Ziming\LaravelJumio\Requests\Accounts\UpdateAccountRequest;
 use Ziming\LaravelJumio\Requests\Credentials\FinalizeWorkflowRequest;
 use Ziming\LaravelJumio\Requests\Credentials\UploadCredentialPartRequest;
+use Ziming\LaravelJumio\Requests\Retrieval\DownloadImageRequest;
 use Ziming\LaravelJumio\Requests\Retrieval\GenerateWorkflowPdfRequest;
 use Ziming\LaravelJumio\Requests\Retrieval\GetWorkflowDetailsRequest;
 use Ziming\LaravelJumio\Requests\Retrieval\GetWorkflowRulesRequest;
@@ -51,6 +54,31 @@ final class JumioManager implements JumioClient
         $result = $this->sendDto($this->accountsConnector(), $request);
 
         return $result;
+    }
+
+    public function createAccountSimple(
+        string $customerReference,
+        ?string $successUrl = null,
+        ?string $errorUrl = null,
+        ?string $locale = null,
+    ): AccountSessionData {
+        $workflowKey = $this->optionalString('jumio.workflow_definition_key');
+
+        if ($workflowKey === null) {
+            throw new JumioException('Missing Jumio configuration value [jumio.workflow_definition_key]. Set it in config or use createAccount() with an explicit WorkflowDefinitionData.');
+        }
+
+        $web = new WebSettingsData(
+            successUrl: $successUrl ?? $this->optionalString('jumio.web.success_url'),
+            errorUrl: $errorUrl ?? $this->optionalString('jumio.web.error_url'),
+            locale: $locale ?? $this->optionalString('jumio.web.locale'),
+        );
+
+        return $this->createAccount(new AccountRequestData(
+            customerInternalReference: $customerReference,
+            workflowDefinition: new WorkflowDefinitionData(key: $workflowKey),
+            web: $web,
+        ));
     }
 
     public function updateAccount(string $accountId, AccountRequestData $data): AccountSessionData
@@ -107,7 +135,6 @@ final class JumioManager implements JumioClient
         return $this->sendJson(
             $this->retrievalConnector(),
             new GetWorkflowDetailsRequest($accountId, $workflowExecutionId),
-            'workflow details',
         );
     }
 
@@ -119,7 +146,6 @@ final class JumioManager implements JumioClient
         return $this->sendJson(
             $this->retrievalConnector(),
             new GetWorkflowStepsRequest($accountId, $workflowExecutionId),
-            'workflow steps',
         );
     }
 
@@ -131,7 +157,6 @@ final class JumioManager implements JumioClient
         return $this->sendJson(
             $this->retrievalConnector(),
             new GetWorkflowRulesRequest($accountId, $workflowExecutionId),
-            'workflow rules',
         );
     }
 
@@ -146,6 +171,43 @@ final class JumioManager implements JumioClient
         return $result;
     }
 
+    public function downloadImage(string $href): ?string
+    {
+        $host = parse_url($href, PHP_URL_HOST);
+
+        if (! is_string($host) || (! str_ends_with($host, '.jumio.ai') && ! str_ends_with($host, '.jumio.com'))) {
+            return null;
+        }
+
+        $path = parse_url($href, PHP_URL_PATH);
+
+        if (! is_string($path) || $path === '') {
+            return null;
+        }
+
+        $query = parse_url($href, PHP_URL_QUERY);
+
+        if (is_string($query) && $query !== '') {
+            $path .= '?'.$query;
+        }
+
+        try {
+            $response = $this->retrievalConnector()->send(new DownloadImageRequest($path));
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $response->successful() ? $response->body() : null;
+    }
+
+    public function validateWebhookSignature(string $rawBody, string $signature): bool
+    {
+        $secret = $this->requiredString('jumio.client_secret');
+        $expected = hash_hmac('sha256', $rawBody, $secret);
+
+        return hash_equals($expected, strtolower($signature));
+    }
+
     private function sendDto(Connector $connector, Request $request): mixed
     {
         $response = $this->send($connector, $request);
@@ -156,7 +218,7 @@ final class JumioManager implements JumioClient
     /**
      * @return array<string, mixed>
      */
-    private function sendJson(Connector $connector, Request $request, string $context): array
+    private function sendJson(Connector $connector, Request $request): array
     {
         $response = $this->send($connector, $request);
 
