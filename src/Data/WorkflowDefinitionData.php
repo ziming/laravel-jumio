@@ -17,7 +17,7 @@ final class WorkflowDefinitionData extends Data
      * @param  array<string, mixed>  $capabilities
      */
     public function __construct(
-        public string $key,
+        public int|string $key,
         #[DataCollectionOf(CredentialDefinitionData::class)]
         public array $credentials = [],
         public array $capabilities = [],

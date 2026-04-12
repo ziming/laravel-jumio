@@ -6,6 +6,12 @@ return [
     'client_secret' => env('JUMIO_CLIENT_SECRET'),
     'user_agent' => env('JUMIO_USER_AGENT', 'laravel-jumio/1.0'),
     'callback_url' => env('JUMIO_CALLBACK_URL'),
+    'workflow_definition_key' => env('JUMIO_WORKFLOW_DEFINITION_KEY'),
+    'web' => [
+        'success_url' => env('JUMIO_SUCCESS_URL'),
+        'error_url' => env('JUMIO_ERROR_URL'),
+        'locale' => env('JUMIO_LOCALE'),
+    ],
     'timeout' => (int) env('JUMIO_TIMEOUT', 30),
     'connect_timeout' => (int) env('JUMIO_CONNECT_TIMEOUT', 10),
     'retry' => [
